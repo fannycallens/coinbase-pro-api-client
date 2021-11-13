@@ -19,6 +19,8 @@ public class ClientFactory {
 
     private static final OkHttpClient sharedClient;
     private static final Converter.Factory converterFactory = JacksonConverterFactory.create();
+    private static final String WsFeed = "wss://ws-feed.exchange.coinbase.com";
+    private static final String WsFeedSandbox = "wss://ws-feed-public.sandbox.exchange.coinbase.com";
 
     static {
         Dispatcher dispatcher = new Dispatcher();
@@ -26,7 +28,8 @@ public class ClientFactory {
         dispatcher.setMaxRequests(500);
         sharedClient = new OkHttpClient.Builder()
                 .dispatcher(dispatcher)
-                .pingInterval(20, TimeUnit.SECONDS)
+                .
+                pingInterval(20, TimeUnit.SECONDS)
                 .build();
     }
     private ClientFactory() {}
@@ -52,8 +55,7 @@ public class ClientFactory {
      * @return websocket url
      */
     public static String getStreamApiBaseUrl() {
-        //wss://ws-feed.exchange.coinbase.com
-        return String.format("wss://ws-feed-public.sandbox.exchange.coinbase.com");
+        return WsFeedSandbox;
     }
 
 }

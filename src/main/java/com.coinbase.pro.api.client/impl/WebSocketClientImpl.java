@@ -4,15 +4,11 @@ import com.coinbase.pro.api.client.Callback;
 import com.coinbase.pro.api.client.WebSocketClient;
 import com.coinbase.pro.api.client.ClientFactory;
 import com.coinbase.pro.api.client.domain.DepthEvent;
-import com.coinbase.pro.api.client.impl.MyWebSocketListener;
-import com.fasterxml.jackson.core.type.TypeReference;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
 import java.io.Closeable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+
 
 public class WebSocketClientImpl implements WebSocketClient, Closeable {
 
@@ -23,11 +19,19 @@ public class WebSocketClientImpl implements WebSocketClient, Closeable {
     }
 
     @Override
-    public Closeable onDepthEvent(String symbols, Callback<DepthEvent> callback) {
-        final String channel = Arrays.stream(symbols.split(","))
-                .map(String::trim)
-                .map(s -> String.format("%s@depth", s))
-                .collect(Collectors.joining("/"));
+    public Closeable onDepthEvent(String ticker, Callback<DepthEvent> callback) {
+        String channel = String.format("{\"type\":\"subscribe\",\"product_ids\":[\"%s\"],\"channels\":[\"level2\"]}", ticker);
+        //System.out.println(channel);
+
+/*
+// Request
+{
+    "type": "subscribe",
+    "channels": ["level2"]
+}
+
+ */
+
         return createNewWebSocket(channel, new MyWebSocketListener<>(callback, DepthEvent.class));
     }
 
@@ -36,10 +40,10 @@ public class WebSocketClientImpl implements WebSocketClient, Closeable {
     }
 
     private Closeable createNewWebSocket(String channel, MyWebSocketListener<?> listener) {
-        String streamingUrl = String.format("%s/%s", ClientFactory.getStreamApiBaseUrl(), channel);
-        //https://api.exchange.coinbase.com/products/product_id/book?level=1
+        String streamingUrl = String.format(ClientFactory.getStreamApiBaseUrl(), channel);
         Request request = new Request.Builder().url(streamingUrl).build();
         final WebSocket webSocket = client.newWebSocket(request, listener);
+        webSocket.send(channel);
         return () -> {
             final int code = 1000;
             listener.onClosing(webSocket, code, null);
