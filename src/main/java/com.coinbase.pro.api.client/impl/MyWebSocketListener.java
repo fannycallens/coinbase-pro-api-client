@@ -1,4 +1,4 @@
-package package com.coinbase.pro.api.client.impl;
+package com.coinbase.pro.api.client.impl;
 
 import com.coinbase.pro.api.client.Callback;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -7,8 +7,9 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
-
+import java.lang.Exception;
 import java.io.IOException;
+import java.lang.System;
 
 
 public class MyWebSocketListener<T> extends WebSocketListener {
@@ -17,16 +18,17 @@ public class MyWebSocketListener<T> extends WebSocketListener {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private final ObjectReader objectReader;
+    private ObjectReader objectReader;
+    //private final ObjectReader objectReader;
 
     private boolean closing = false;
 
-    public WebSocketListener(Callback<T> callback, Class<T> eventClass) {
+    public MyWebSocketListener(Callback<T> callback, Class<T> eventClass) {
         this.callback = callback;
         this.objectReader = mapper.readerFor(eventClass);
     }
 
-    public WebSocketListener(ApiCallback<T> callback, TypeReference<T> eventTypeReference) {
+    public MyWebSocketListener(Callback<T> callback, TypeReference<T> eventTypeReference) {
         this.callback = callback;
         this.objectReader = mapper.readerFor(eventTypeReference);
     }
@@ -37,7 +39,8 @@ public class MyWebSocketListener<T> extends WebSocketListener {
             T event = objectReader.readValue(text);
             callback.onResponse(event);
         } catch (IOException e) {
-            throw new Exception(e);
+            //throw new Exception(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 

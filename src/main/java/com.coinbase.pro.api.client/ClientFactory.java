@@ -1,78 +1,59 @@
 package com.coinbase.pro.api.client;
 
+import com.coinbase.pro.api.client.impl.WebSocketClientImpl;
+import okhttp3.OkHttpClient;
+import okhttp3.Dispatcher;
+import retrofit2.Converter;
+import retrofit2.converter.jackson.JacksonConverterFactory;
+import java.util.concurrent.TimeUnit;
+/**
+ * Base domain for all URLs (https://api.exchange.coinbase.com)
+ * All API endpoints are documented here :
+ * https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getaccounts
+ */
+
 /**
  * A factory for creating client objects.
  */
 public class ClientFactory {
 
-    /**
-     * Base domain for URLs.
-     */
-    private static String BASE_DOMAIN = "coinbase.com";
+    private static final OkHttpClient sharedClient;
+    private static final Converter.Factory converterFactory = JacksonConverterFactory.create();
 
-    /**
-     * API Key
-     */
-    private String apiKey;
-
-    /**
-     * Secret.
-     */
-    private String secret;
-
-    /**
-     * Instantiates a new client factory.
-     *
-     * @param apiKey the API key
-     * @param secret the Secret
-     */
-    private ClientFactory(String apiKey, String secret) {
-        this.apiKey = apiKey;
-        this.secret = secret;
+    static {
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.setMaxRequestsPerHost(500);
+        dispatcher.setMaxRequests(500);
+        sharedClient = new OkHttpClient.Builder()
+                .dispatcher(dispatcher)
+                .pingInterval(20, TimeUnit.SECONDS)
+                .build();
     }
-
-
+    private ClientFactory() {}
     /**
-     * New instance.
      *
-     * @param apiKey the API key
-     * @param secret the Secret
+     * Instantiates a new client factory for market data
+     * No authenticstion required
      *
      * @return client factory
      */
-    public static ClientFactory newInstance(String apiKey, String secret) {
-        return new ClientFactory(apiKey, secret);
-    }
-
-    /**
-     * New instance without authentication.
-     *
-     * @return tclient factory
-     */
     public static ClientFactory newInstance() {
-        return new ClientFactory(null, null);
+        return new ClientFactory();
     }
-
 
     /**
      * Creates a new web socket client used for handling data streams.
      */
     public WebSocketClient newWebSocketClient() {
-        return new WebSocketClientImpl(getSharedClient());
+        return new WebSocketClientImpl(sharedClient);
     }
 
-
-    public static void setBaseDomain(final String baseDomain) {
-        BASE_DOMAIN = baseDomain;
-    }
-
-    public static String getBaseDomain() {
-        return BASE_DOMAIN;
-    }
-
+    /**
+     * @return websocket url
+     */
     public static String getStreamApiBaseUrl() {
-        return String.format("wss://stream.%s:9443/ws", getBaseDomain());
+        //wss://ws-feed.exchange.coinbase.com
+        return String.format("wss://ws-feed-public.sandbox.exchange.coinbase.com");
     }
-
 
 }
