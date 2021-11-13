@@ -23,15 +23,13 @@ public class WebSocketClientImpl implements WebSocketClient, Closeable {
         String channel = String.format("{\"type\":\"subscribe\",\"product_ids\":[\"%s\"],\"channels\":[\"level2\"]}", ticker);
         //System.out.println(channel);
 
-/*
-// Request
-{
-    "type": "subscribe",
-    "channels": ["level2"]
-}
-
- */
-
+        /* Request
+        {
+            "type": "subscribe",
+            "product_ids": ["BTC-USD"],
+            "channels": ["level2"]
+        }
+         */
         return createNewWebSocket(channel, new MyWebSocketListener<>(callback, DepthEvent.class));
     }
 

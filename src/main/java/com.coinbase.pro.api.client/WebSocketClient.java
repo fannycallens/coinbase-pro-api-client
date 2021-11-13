@@ -2,7 +2,6 @@ package com.coinbase.pro.api.client;
 
 import com.coinbase.pro.api.client.domain.DepthEvent;
 import java.io.Closeable;
-import java.util.List;
 
 /**
  * data streaming facade, supporting streaming of events through a web socket
@@ -10,12 +9,11 @@ import java.util.List;
 public interface WebSocketClient extends Closeable {
 
     /**
-     * Open a new web socket to receive {@link DepthEvent depthEvents} on a callback.
-     *
-     * @param symbols  market (one or coma-separated) symbol(s) to subscribe to
+     * Open a new web socket to receive DepthEvent on a callback.
+     * @param ticker  market (one or coma-separated) symbol(s) to subscribe to
      * @param callback the callback to call on new events
-     * @return a {@link Closeable} that allows the underlying web socket to be closed.
+     * @return a Closeable that allows the underlying web socket to be closed.
      */
-    Closeable onDepthEvent(String symbols, Callback<DepthEvent> callback);
+    Closeable onDepthEvent(String ticker, Callback<DepthEvent> callback);
 
 }

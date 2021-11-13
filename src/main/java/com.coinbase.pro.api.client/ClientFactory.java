@@ -19,7 +19,7 @@ public class ClientFactory {
 
     private static final OkHttpClient sharedClient;
     private static final Converter.Factory converterFactory = JacksonConverterFactory.create();
-    private static final String WsFeed = "wss://ws-feed.exchange.coinbase.com";
+    //private static final String WsFeed = "wss://ws-feed.exchange.coinbase.com";
     private static final String WsFeedSandbox = "wss://ws-feed-public.sandbox.exchange.coinbase.com";
 
     static {
@@ -34,10 +34,8 @@ public class ClientFactory {
     }
     private ClientFactory() {}
     /**
-     *
      * Instantiates a new client factory for market data
-     * No authenticstion required
-     *
+     * No authenticstion required for the sandbox url
      * @return client factory
      */
     public static ClientFactory newInstance() {
@@ -45,7 +43,7 @@ public class ClientFactory {
     }
 
     /**
-     * Creates a new web socket client used for handling data streams.
+     * Creates a new web socket client used for handling data streams
      */
     public WebSocketClient newWebSocketClient() {
         return new WebSocketClientImpl(sharedClient);

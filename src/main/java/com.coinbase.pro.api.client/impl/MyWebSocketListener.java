@@ -27,7 +27,7 @@ public class MyWebSocketListener<T> extends WebSocketListener {
 
     @Override
     public void onMessage(WebSocket webSocket, String text) {
-        System.out.println(text);
+        //System.out.println(text);
         try {
             T event = objectReader.readValue(text);
             callback.onResponse(event);
