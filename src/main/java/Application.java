@@ -77,22 +77,24 @@ public class Application {
         private void updateOrderBook(NavigableMap<BigDecimal, BigDecimal> lastOrderBookEntries,
                                      List<OrderBookEntry> orderBookDeltas, String askOrBid) {
                 if (lastOrderBookEntries == null){
-                        NavigableMap<BigDecimal, BigDecimal> asks = new TreeMap<>(Comparator.reverseOrder());
+                        NavigableMap<BigDecimal, BigDecimal> asks = new TreeMap<>(Comparator.naturalOrder());
                         depthCache.put(ASKS, asks);
 
                         NavigableMap<BigDecimal, BigDecimal> bids = new TreeMap<>(Comparator.reverseOrder());
                         depthCache.put(BIDS, bids);
                 }
                 if (orderBookDeltas != null) {
+                        int i =0;
                         for (OrderBookEntry orderBookDelta : orderBookDeltas) {
+                                i +=1;
                                 BigDecimal price = new BigDecimal(orderBookDelta.getPrice());
                                 BigDecimal qty = new BigDecimal(orderBookDelta.getQty());
                                 if (qty.compareTo(BigDecimal.ZERO) == 0) {
+                                        i-= 1;
                                         // qty=0 means remove this level
                                         lastOrderBookEntries.remove(price);
-                                } else {
+                                } else if (i < 11) {
                                         lastOrderBookEntries.put(price, qty);
-
                                 }
                         }
                         depthCache.put(askOrBid,lastOrderBookEntries);
@@ -144,7 +146,13 @@ public class Application {
         }
 
         public static void main(String[] args) {
+
+                System.out.println(String.format("Launching app for ticker", System.getProperty("ticker")));
+                /*for (String str : args) {
+                        System.out.println(String.format("Launching app for ticker", str));
+                }*/
                 new Application("ETH-BTC");
+
         }
 
         private final class WsDepthCallback implements Callback<DepthEvent> {
