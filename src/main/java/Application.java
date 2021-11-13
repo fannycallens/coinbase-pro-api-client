@@ -50,12 +50,8 @@ public class Application {
                 "channels": ["matches"],
                 }
                  */
-                 */
-                 */
+
                 String json = "{\"method\":\"subscribe\",\"product_ids\":\"ETH-US\",\"channels\":\"level2\"}";
 
-
-            )
-        )
         }
 }
