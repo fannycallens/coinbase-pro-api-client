@@ -4,6 +4,7 @@ import com.coinbase.pro.api.client.Callback;
 import com.coinbase.pro.api.client.WebSocketClient;
 import com.coinbase.pro.api.client.ClientFactory;
 import com.coinbase.pro.api.client.domain.DepthEvent;
+import com.coinbase.pro.api.client.domain.OrderBookEvent;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
