@@ -51,6 +51,8 @@ public class DepthEvent {
                 .toString();
     }
 
+    public String getType() { return type; }
+
     public List<OrderBookEntry> getAsks() {
         return asks;
     }

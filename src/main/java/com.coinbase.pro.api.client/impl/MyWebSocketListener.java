@@ -32,7 +32,8 @@ public class MyWebSocketListener<T> extends WebSocketListener {
             T event = objectReader.readValue(text);
             callback.onResponse(event);
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            System.err.println("Exception parsing event or processing callback on response");
+            e.printStackTrace(System.err);
         }
     }
 

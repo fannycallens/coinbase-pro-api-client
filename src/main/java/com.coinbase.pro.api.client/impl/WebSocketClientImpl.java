@@ -26,7 +26,7 @@ public class WebSocketClientImpl implements WebSocketClient, Closeable {
         /* Request
         {
             "type": "subscribe",
-            "product_ids": ["BTC-USD"],
+            "product_ids": ["ETH-BTC"],
             "channels": ["level2"]
         }
          */

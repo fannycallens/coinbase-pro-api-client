@@ -3,8 +3,6 @@ package com.coinbase.pro.api.client;
 import com.coinbase.pro.api.client.impl.WebSocketClientImpl;
 import okhttp3.OkHttpClient;
 import okhttp3.Dispatcher;
-import retrofit2.Converter;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 import java.util.concurrent.TimeUnit;
 /**
  * Base domain for all URLs (https://api.exchange.coinbase.com)
@@ -18,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 public class ClientFactory {
 
     private static final OkHttpClient sharedClient;
-    private static final Converter.Factory converterFactory = JacksonConverterFactory.create();
     //private static final String WsFeed = "wss://ws-feed.exchange.coinbase.com";
     private static final String WsFeedSandbox = "wss://ws-feed-public.sandbox.exchange.coinbase.com";
 
@@ -35,7 +32,7 @@ public class ClientFactory {
     private ClientFactory() {}
     /**
      * Instantiates a new client factory for market data
-     * No authenticstion required for the sandbox url
+     * No authentication required for the sandbox url
      * @return client factory
      */
     public static ClientFactory newInstance() {

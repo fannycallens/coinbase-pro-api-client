@@ -1,7 +1,6 @@
 package com.coinbase.pro.api.client;
 
 import com.coinbase.pro.api.client.domain.DepthEvent;
-
 import java.io.Closeable;
 
 /**

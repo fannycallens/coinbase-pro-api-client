@@ -16,7 +16,9 @@ import java.util.function.Consumer;
 public class Application {
 
         private static final String BIDS = "BIDS";
+        private static final String BID = "BID";
         private static final String ASKS = "ASKS";
+        private static final String ASK = "ASK";
         private final String ticker;
         private final WebSocketClient wsClient;
         private final WsDepthCallback wsDepthCallback = new WsDepthCallback();
@@ -31,10 +33,13 @@ public class Application {
         }
 
         private void initialize() {
-                // Subscribe to depth events and cache any events that are received.
+                // Create web socket and subscribe to depth events
                 final List<DepthEvent> pendingDeltas = startDepthEventStreaming();
 
-                //Populate order book with snapshot and l2update
+                // Initialise order book with snapshot
+                // Update order book with l2update
+                // Populate depthCache
+                // We assume that we will always receive a snapshot event before l2update events
                 applyPendingDeltas(pendingDeltas);
         }
 
@@ -42,8 +47,11 @@ public class Application {
         // Begins streaming of depth events.
         private List<DepthEvent> startDepthEventStreaming() {
                 final List<DepthEvent> pendingDeltas = new CopyOnWriteArrayList<>();
+
+                // Cache first updates
                 wsDepthCallback.setHandler(pendingDeltas::add);
 
+                // create web socket
                 this.webSocket = wsClient.onDepthEvent(ticker, wsDepthCallback);
 
                 return pendingDeltas;
@@ -52,15 +60,15 @@ public class Application {
         // Deal with any cached updates and switch to normal running.
         private void applyPendingDeltas(final List<DepthEvent> pendingDeltas) {
                 final Consumer<DepthEvent> updateOrderBook = newEvent -> {
-                                updateOrderBook(getAsks(), newEvent.getAsks(), ASKS);
-                                updateOrderBook(getBids(), newEvent.getBids(), BIDS);
+                                updateOrderBook(getAsks(), newEvent.getAsks(), ASKS, newEvent.getType());
+                                updateOrderBook(getBids(), newEvent.getBids(), BIDS, newEvent.getType());
                                 printDepthCache();
                 };
 
                 final Consumer<DepthEvent> drainPending = newEvent -> {
                         pendingDeltas.add(newEvent);
 
-                        // Apply any deltas received on the web socket
+                        // Apply latest updates received on the web socket
                         pendingDeltas.stream()
                                 .forEach(updateOrderBook);
 
@@ -71,33 +79,33 @@ public class Application {
                 wsDepthCallback.setHandler(drainPending);
         }
 
-        // Updates an order book (bids or asks) with a delta received from the server.
-        // Whenever the qty is ZERO, it means the price should be removed from the order book.
-        // if orderBoolDelta is null, nothing to do
+        // Update an order book (bids or asks) with depth events
+        // if orderBoolDelta is null or if we receive a new snapshot, initialise depth cache with sorted bids and asks
         private void updateOrderBook(NavigableMap<BigDecimal, BigDecimal> lastOrderBookEntries,
-                                     List<OrderBookEntry> orderBookDeltas, String askOrBid) {
-                if (lastOrderBookEntries == null){
+                                     List<OrderBookEntry> orderBookDeltas, String askOrBid, String type) {
+                // initialise depth cache with sorted maps
+                if ((lastOrderBookEntries == null) || (type== "snapshot")){
+                        // Sort the asks from smallest to biggest, then we will print the first entries
                         NavigableMap<BigDecimal, BigDecimal> asks = new TreeMap<>(Comparator.naturalOrder());
                         depthCache.put(ASKS, asks);
-
+                        // Sort the bids from biggest to smaller, then we will print the first entries
                         NavigableMap<BigDecimal, BigDecimal> bids = new TreeMap<>(Comparator.reverseOrder());
                         depthCache.put(BIDS, bids);
                 }
-                if (orderBookDeltas != null) {
-                        int i =0;
+                if ((orderBookDeltas != null)) {
                         for (OrderBookEntry orderBookDelta : orderBookDeltas) {
-                                i +=1;
                                 BigDecimal price = new BigDecimal(orderBookDelta.getPrice());
                                 BigDecimal qty = new BigDecimal(orderBookDelta.getQty());
                                 if (qty.compareTo(BigDecimal.ZERO) == 0) {
-                                        i-= 1;
-                                        // qty=0 means remove this level
+                                        // Remove price from order book if qty = 0
                                         lastOrderBookEntries.remove(price);
-                                } else if (i < 11) {
+                                } else {
+                                        // Insert new price level in order book
                                         lastOrderBookEntries.put(price, qty);
                                 }
+                                // Update depth cache
+                                depthCache.put(askOrBid, lastOrderBookEntries);
                         }
-                        depthCache.put(askOrBid,lastOrderBookEntries);
                 }
         }
 
@@ -109,52 +117,57 @@ public class Application {
                 return depthCache.get(BIDS);
         }
 
-         // @return the best ask in the order book
-        private Map.Entry<BigDecimal, BigDecimal> getBestAsk() {
-                return getAsks().lastEntry();
-        }
-
-        // @return the best bid in the order book
-        private Map.Entry<BigDecimal, BigDecimal> getBestBid() {
-                return getBids().firstEntry();
-        }
-
-        //@return a depth cache, containing two keys (ASKs and BIDs), and for each, an ordered list of book entries.
-        public Map<String, NavigableMap<BigDecimal, BigDecimal>> getDepthCache() {
-                return depthCache;
-        }
-
         public void close() throws IOException {
                 webSocket.close();
         }
 
-         //Prints the cached depth of a ticker
+         //Print the 10 best bids and 10 best asks
         private void printDepthCache() {
-                System.out.println(depthCache);
+                //System.out.println(depthCache);
                 if (getAsks() != null) {
-                        System.out.println("ASKS:(" + getAsks().size() + ")");
-                        getAsks().entrySet().forEach(entry -> System.out.println(toDepthCacheEntryString(entry)));
+                        int i =0;
+                        for (Map.Entry<BigDecimal, BigDecimal> ask : getAsks().entrySet()){
+                                if (i < 10) {
+                                        System.out.println(toDepthCacheEntryString(ask, ASK, i));
+                                }
+                                i++;
+                        }
                 }
                 if (getBids() != null){
-                        System.out.println("BIDS:(" + getBids().size() + ")");
-                        getBids().entrySet().forEach(entry -> System.out.println(toDepthCacheEntryString(entry)));
+                        int i =0;
+                        for (Map.Entry<BigDecimal, BigDecimal> bid : getBids().entrySet()){
+                                if (i < 10) {
+                                        System.out.println(toDepthCacheEntryString(bid, BID, i));
+                                }
+                                i++;
+                        }
                 }
         }
-        // Pretty prints an order book entry in the format "price / quantity".
-        private static String toDepthCacheEntryString(Map.Entry<BigDecimal, BigDecimal> depthCacheEntry) {
-                return depthCacheEntry.getKey().toPlainString() + " / " + depthCacheEntry.getValue();
+
+        // Print an order book entry in the format "bidOrAsk / price / quantity".
+        private static String toDepthCacheEntryString(Map.Entry<BigDecimal, BigDecimal> depthCacheEntry,
+                                                      String bidOrAsk, int index) {
+                int level = index + 1;
+                return bidOrAsk + " " + level + " / " + depthCacheEntry.getKey().toPlainString() + " / "
+                        + depthCacheEntry.getValue();
         }
 
         public static void main(String[] args) {
+                String ticker = args[0];
+                System.out.println(String.format("Launching app for ticker %s", ticker));
+                Application myApp = new Application(ticker);
+                //TODO : catch ctrl + C event and close the web socket
+//                try {
+//                        myApp.close();
+//                }
+//                catch(IOException e) {
+//                        e.printStackTrace();
+//                }
 
-                System.out.println(String.format("Launching app for ticker", System.getProperty("ticker")));
-                /*for (String str : args) {
-                        System.out.println(String.format("Launching app for ticker", str));
-                }*/
-                new Application("ETH-BTC");
 
         }
 
+        // Implement a specific callback for depth events with handler
         private final class WsDepthCallback implements Callback<DepthEvent> {
 
                 private final AtomicReference<Consumer<DepthEvent>> handler = new AtomicReference<>();
@@ -182,15 +195,12 @@ public class Application {
         }
 
         public static void xmain(String[] args) throws InterruptedException, IOException {
-                //System.out.println(String.format("Launching app for ticker", System.getProperty("ticker")));
-                for (String str : args) {
-                        System.out.println(String.format("Launching app for ticker", str));
-                }
-
+                String ticker = args[0];
+                System.out.println(String.format("Launching app for ticker %s", ticker));
                 ClientFactory factory = ClientFactory.newInstance();
                 final WebSocketClient wsClient;
                 wsClient = factory.newWebSocketClient();
-                wsClient.onDepthEvent("ETH-BTC", response -> System.out.println(response));
+                wsClient.onDepthEvent(ticker, response -> System.out.println(response));
         }
 
 }
